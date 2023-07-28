@@ -4,7 +4,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.utils import executor
-from django_bot.models import TelegramUser
+from django_bot.models import TelegramUser, Catalog
 import menu as menu
 
 from dotenv import load_dotenv, find_dotenv
@@ -34,22 +34,35 @@ class FormDataUserSetStatus(StatesGroup):
 
 
 async def aget_or_create(self, **kwargs):
-    return await sync_to_async(self.get_or_create)(**kwargs)
+    return await sync_to_async(self.get_or_create(**kwargs))
+
+@sync_to_async
+def set_user(user_id):
+    telegram_user, new_user = TelegramUser.objects.get_or_create(chat_id=user_id)
+    return telegram_user, new_user
+
+
+@sync_to_async
+def get_cakes():
+    cakes_catalog = Catalog.objects.all()
+    return list(cakes_catalog)
 
 # ============================================================================================================================================================================================================================
 @dp.message_handler(CommandStart())
 async def command_start(message: types.Message):
     # await bot.send_message(message.from_user.id, "---", reply_markup=menu.main_menu)
     # т.е. если первый раз - заносим в БД
-    telegram_user, new_user = await TelegramUser.objects.aget_or_create(chat_id=message.from_user.id)
-    user = str(await sync_to_async(telegram_user.get_user)())
+    # telegram_user, new_user = await TelegramUser.objects.get_or_create(chat_id=message.from_user.id)
+    telegram_user, new_user = await set_user(message.from_user.id)
+    user = message.from_user.first_name
+
 
     if not new_user:
         logging.info("user есть в БД")
-        await bot.send_message(message.from_user.id, "Зареган в БД !\n"+user, reply_markup=menu.main_menu)
+        await bot.send_message(message.from_user.id, f"Пользователь {user} Зареган в БД !\n", reply_markup=menu.main_menu)
     else:
         logging.info("New user")
-        await bot.send_message(message.from_user.id, "Новый Зареган в БД !\nТут можно сразу выдать не рабочее меню, а меню настроек\n"+user, reply_markup=menu.main_menu)
+        await bot.send_message(message.from_user.id, f"Новый пользователь {user} Зареган в БД !\nТут можно сразу выдать не рабочее меню, а меню настроек\n", reply_markup=menu.main_menu)
 
 
 # ============================================================================================================================================================================================================================
@@ -78,8 +91,22 @@ async def bot_message(message: types.Message):
 
     # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     if message.text == 'Готовые торты 🍰':
-        await bot.send_message(message.from_user.id,'😋',
-                               reply_markup=menu.ReadyCakeRoot)
+        cakes = await get_cakes()
+        for cake in cakes:
+            text = f'\n*{cake.short_title}*\n'\
+                    f'---------------------------\n'\
+                    f'{cake.description}\n'\
+                    f'---------------------------\n'\
+                    f'*{cake.price} руб*'
+            print(cake.image)
+            with open(f'media/{cake.image}', 'rb') as photo:
+                await bot.send_photo(
+                    chat_id=message.from_user.id,
+                    photo=photo,
+                    caption=text,
+                    parse_mode='Markdown')
+
+        await bot.send_message(message.from_user.id, 'Выбирайте', reply_markup=menu.ReadyCakeRoot)
 
     if message.text == 'О нас ...':
         await bot.send_message(message.from_user.id,'😎\nМега-крутой бот оформления заказов на тортики...')
