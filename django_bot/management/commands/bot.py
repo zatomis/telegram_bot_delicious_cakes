@@ -4,7 +4,8 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.utils import executor
-from django_bot.models import TelegramUser, Catalog
+from django_bot.models import TelegramUser, Cakes, Images
+from django.shortcuts import get_object_or_404
 import menu as menu
 
 from dotenv import load_dotenv, find_dotenv
@@ -44,8 +45,18 @@ def set_user(user_id):
 
 @sync_to_async
 def get_cakes():
-    cakes_catalog = Catalog.objects.all()
-    return list(cakes_catalog)
+    cakes = Cakes.objects.all()
+    return list(cakes)
+
+@sync_to_async
+def get_cakes_title(title):
+    cake = Cakes.objects.get(short_title=title)
+    return cake
+
+@sync_to_async
+def get_image_path(cake):
+    return cake.image_id.path
+
 
 # ============================================================================================================================================================================================================================
 @dp.message_handler(CommandStart())
@@ -86,20 +97,29 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 @dp.message_handler()
 async def bot_message(message: types.Message):
     print(message.text)
+    cakes = await get_cakes()
+    cake_basket = []
+    cake_title = []
+    for cake in cakes:
+        cake_title.append(cake.short_title)
+
+    
     # if (getUserInfo(message.from_user.id) == ""):  # баг
     #         "Внимание ⁉\n⚠ Для правильной работы бота вам необходимо в меню (вверху справа) очистить историю и запустить бота заново !\n⚠ Иначе корректная работа - не гарантируется 😱",
 
     # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     if message.text == 'Готовые торты 🍰':
         cakes = await get_cakes()
+        
+
         for cake in cakes:
             text = f'\n*{cake.short_title}*\n'\
                     f'---------------------------\n'\
                     f'{cake.description}\n'\
                     f'---------------------------\n'\
                     f'*{cake.price} руб*'
-            print(cake.image)
-            with open(f'media/{cake.image}', 'rb') as photo:
+            image_path = await get_image_path(cake)
+            with open(f'media/{image_path}', 'rb') as photo:
                 await bot.send_photo(
                     chat_id=message.from_user.id,
                     photo=photo,
@@ -108,6 +128,31 @@ async def bot_message(message: types.Message):
 
         await bot.send_message(message.from_user.id, 'Выбирайте', reply_markup=menu.ReadyCakeRoot)
 
+    if message.text in cake_title:
+        name_cake = message.text
+        cake = await get_cakes_title(name_cake)
+        
+        text = f'\n*{cake.short_title}*\n'\
+                    f'---------------------------\n'\
+                    f'{cake.description}\n'\
+                    f'---------------------------\n'\
+                    f'*{cake.price} руб*'
+        image_path = await get_image_path(cake)
+        with open(f'media/{image_path}', 'rb') as photo:
+            await bot.send_photo(
+                chat_id=message.from_user.id,
+                photo=photo,
+                caption=text,
+                parse_mode='Markdown')
+        
+        await bot.send_message(
+            message.from_user.id,
+            'Добавить в корзину?',
+            reply_markup=menu.btnMenuYesOrNo)
+        
+    if message.text == "Добавить":
+        pass
+    
     if message.text == 'О нас ...':
         await bot.send_message(message.from_user.id,'😎\nМега-крутой бот оформления заказов на тортики...')
 

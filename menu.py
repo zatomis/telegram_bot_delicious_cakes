@@ -1,4 +1,5 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from django_bot.models import Cakes
 
 btnMain  = KeyboardButton('📰 Главное меню')
 btnMainTechSupport  = KeyboardButton('💻⌨️ Тех.поддержка')
@@ -29,14 +30,11 @@ btnMenuEatBot.add(btnMenuEatYagoda)
 btnMenuEatBot.add(btnMenuEatOreh)
 btnMenuEatBot.add(btnMain)
 
-btnReadyCakeVanila     = KeyboardButton('Ванильные')
-btnReadyCakechocolate  = KeyboardButton('Шоколадные')
-btnReadyCakeStrawberry = KeyboardButton('Ягодные')
-btnReadyCakeMaster     = KeyboardButton('От шефа')
-ReadyCakeRoot = ReplyKeyboardMarkup(resize_keyboard = True).add(btnReadyCakeVanila)
-ReadyCakeRoot.add(btnReadyCakechocolate)
-ReadyCakeRoot.add(btnReadyCakeStrawberry)
-ReadyCakeRoot.add(btnReadyCakeMaster)
+
+ReadyCakeRoot = ReplyKeyboardMarkup(resize_keyboard = True)
+all_cakes = Cakes.objects.all()
+for cake in all_cakes:
+    ReadyCakeRoot.add(cake.short_title)
 ReadyCakeRoot.add(btnMain)
 
 btnReadyCakeVanilaDream = KeyboardButton('Ванильная мечта')
@@ -47,6 +45,11 @@ ReadyCakeVanila.add(btnReadyCakeVanilaM)
 ReadyCakeVanila.add(btnReadyCakeVanilaLady)
 ReadyCakeVanila.add(btnMain, btnReadyCake)
 
+
+btnMenuYesOrNo = ReplyKeyboardMarkup(resize_keyboard = True)
+btnMenuYesOrNo.add("Добавить")
+btnMenuYesOrNo.add("Не добавлять")
+btnMenuYesOrNo.add(btnMain)
 
 btnBasketView  = KeyboardButton('Посмотреть корзину')
 btnBasketClear = KeyboardButton('Очистить корзину')
