@@ -34,7 +34,7 @@ btnMenuEatBot.add(btnMain)
 ReadyCakeRoot = ReplyKeyboardMarkup(resize_keyboard = True)
 all_cakes = Cakes.objects.all()
 for cake in all_cakes:
-    ReadyCakeRoot.add(cake.short_title)
+    ReadyCakeRoot.add("№" + str(cake.id) + " " +cake.short_title) #символ номер № - это признак для отлова сообщения
 ReadyCakeRoot.add(btnMain)
 
 btnReadyCakeVanilaDream = KeyboardButton('Ванильная мечта')
