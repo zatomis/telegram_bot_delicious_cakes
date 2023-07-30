@@ -2,3 +2,4 @@ python-dotenv==0.9.1
 aiogram==2.25.1
 environs==9.5.*
 Django==4.1.7
+Pillow==10.0.0

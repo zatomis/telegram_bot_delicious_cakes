@@ -4,7 +4,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.utils import executor
-from django_bot.models import TelegramUser, Cakes, Images
+from django_bot.models import TelegramUser, Cakes, Cart, Images
 from django.shortcuts import get_object_or_404
 import menu as menu
 
@@ -67,7 +67,6 @@ async def command_start(message: types.Message):
     telegram_user, new_user = await set_user(message.from_user.id)
     user = message.from_user.first_name
 
-
     if not new_user:
         logging.info("user есть в БД")
         await bot.send_message(message.from_user.id, f"Пользователь {user} Зареган в БД !\n", reply_markup=menu.main_menu)
@@ -97,6 +96,7 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 @dp.message_handler()
 async def bot_message(message: types.Message):
     print(message.text)
+
     cakes = await get_cakes()
     cake_basket = []
     cake_title = []
@@ -110,7 +110,6 @@ async def bot_message(message: types.Message):
     # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     if message.text == 'Готовые торты 🍰':
         cakes = await get_cakes()
-        
 
         for cake in cakes:
             text = f'\n*{cake.short_title}*\n'\
@@ -144,7 +143,7 @@ async def bot_message(message: types.Message):
                 photo=photo,
                 caption=text,
                 parse_mode='Markdown')
-        
+
         await bot.send_message(
             message.from_user.id,
             'Добавить в корзину?',
@@ -199,6 +198,27 @@ async def bot_message(message: types.Message):
 
     elif message.text == 'Мои настройки ⚙️':
         await bot.send_message(message.from_user.id, 'Уже скоро\n🚧 в разработке...')
+
+
+    elif message.text[0] == '№':
+        #тут мы получили торт - вернее строку вида №(1....) Название. Из этого можно выбрать id - т.е. ключ торта и далее добавить его в корзину
+        split_string = str(message.text).split(' ')
+        cake_id = str(split_string[0]).replace('№','')
+        cake_name = str(split_string[1])
+        # далее код - добавление в корзину по cake_id
+        # ....
+
+        пока завис на добавлении...
+
+        # Cart.objects.create(client_id=await set_user(id=message.from_user.id)[0], product=Cakes.objects.aget(id=int(cake_id)))
+        # Cart.objects.create(client_id=TelegramUser.objects.aget(id=message.from_user.id), product=Cakes.objects.aget(id=int(cake_id)))
+        # current_user = TelegramUser.objects.aget(id__contains=message.from_user.id)
+        # print(current_user)
+
+        await Cart.objects.acreate(client_id= await (TelegramUser.objects.aget(id__contains=message.from_user.id)), product= await Cakes.objects.aget(id=int(cake_id)))
+        # await Cart.objects.acreate(client_id= await (TelegramUser.objects.aget(id=message.from_user.id)), product= await Cakes.objects.aget(id=int(cake_id)))
+
+        await bot.send_message(message.from_user.id, 'Торт '+ cake_name + ' добавлен в корзину ✅', reply_markup=menu.main_menu)
 
     else:
         await bot.send_message(message.from_user.id, "\n", reply_markup=types.ReplyKeyboardRemove())

@@ -3,7 +3,14 @@ from datetime import date
 from django.db import models
 
 
-
+# class TelegramUser(models.Model):
+#     user = models.OneToOneField(
+#         to=get_user_model(),
+#         on_delete=models.CASCADE,
+#         blank=True,
+#         null=True,
+#         related_name='telegram_user'
+#     )
 class TelegramUser(models.Model):
     chat_id = models.CharField(
         max_length=20,
@@ -20,6 +27,9 @@ class TelegramUser(models.Model):
         default="",
         verbose_name="Номер клиента"
         )
+
+    def get_id(self):
+        return self.id
 
     def __str__(self) -> str:
         return f'{self.name}. {self.chat_id}'
@@ -211,6 +221,27 @@ class Orders(models.Model):
         verbose_name_plural = "Заказы"
     
 
+class Cart(models.Model):
+    client_id = models.ForeignKey(
+        TelegramUser,
+        on_delete=models.CASCADE,
+        verbose_name="Клиент"
+        )
+
+    product = models.ForeignKey(
+        Cakes,
+        on_delete=models.CASCADE,
+        verbose_name="Торт"
+        )
+
+    created_at = models.DateTimeField(
+        verbose_name="Время добавления в корзину",
+        auto_now_add=True
+    )
+
+    class Meta:
+        verbose_name = "Корзина"
+        verbose_name_plural = "Заказы клиентов в корзинах"
 
 
 

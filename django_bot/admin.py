@@ -6,7 +6,8 @@ from .models import (
     Ingredients,
     Images,
     Orders,
-    Constructor)
+    Constructor,
+    Cart)
 
 
 @admin.register(TelegramUser)
@@ -32,6 +33,10 @@ class OrdersAdmin(admin.ModelAdmin):
 @admin.register(Constructor)
 class ConstructorAdmin(admin.ModelAdmin):
     list_display = ['title', 'levels_number', 'levels_shape']
+
+@admin.register(Cart)
+class CartAdmin(admin.ModelAdmin):
+    list_display = ['client_id', 'product', 'created_at']
 
 
 admin.site.register(Images)
